@@ -74,7 +74,8 @@ public class BackupThread extends Thread {
 				write(input);
 				if ((i % 5) == 1)
 					System.out.println("[BananaBackup] " + world.getName() + " " + ((i * 100) / files.size()) + "% backed up.");
-				sleep(100);
+				if(BananaBackup.intervalBetween>0)
+					sleep(BananaBackup.intervalBetween);
 			}
 				catch (Exception e) {
 					e.printStackTrace();

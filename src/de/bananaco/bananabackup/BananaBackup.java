@@ -39,6 +39,7 @@ public class BananaBackup extends JavaPlugin {
 	 * The number of ticks per hour, this will never change
 	 */
 	final double tph = 72000;
+	public static int intervalBetween = 100;
 
 	/**
 	 * Just your average onDisable();
@@ -86,6 +87,7 @@ public class BananaBackup extends JavaPlugin {
 		Configuration c = getConfiguration();
 		
 		interval = c.getDouble("backup-interval-hours", 12.0);
+		intervalBetween = c.getInt("interval-between", intervalBetween);
 		allWorlds = c.getBoolean("backup-all-worlds", true);
 		broadcast = c.getBoolean("broadcast-message", true);
 		backupWorlds = c
@@ -95,6 +97,7 @@ public class BananaBackup extends JavaPlugin {
 			backupWorlds.add(getServer().getWorlds().get(0).getName());
 		// Make sure our values are set
 		c.setProperty("backup-worlds", backupWorlds);
+		c.setProperty("interval-between", intervalBetween);
 		c.setProperty("backup-interval-hours", interval);
 		c.setProperty("backup-all-worlds", allWorlds);
 		c.setProperty("broadcast-message", broadcast);
