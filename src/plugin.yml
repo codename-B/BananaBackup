@@ -1,0 +1,9 @@
+name: BananaBackup
+version: 0.1
+author: codename_B
+website: http://ubempire.com/
+main: de.bananaco.bananabackup.BananaBackup
+commands:
+   bananabackup:
+      usage: |
+         /<command
