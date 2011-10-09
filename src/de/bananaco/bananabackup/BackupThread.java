@@ -7,13 +7,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import org.bukkit.World;
-import org.bukkit.World.Environment;
 
 /**
  * The custom thread to make this run beautifully
@@ -23,7 +18,7 @@ public class BackupThread extends Thread {
 	/**
 	 * The world to backup
 	 */
-	private final World world;
+	private final File world;
 	/**
 	 * The file to backup to
 	 */
@@ -34,12 +29,13 @@ public class BackupThread extends Thread {
 	private ZipOutputStream os;
 	/**
 	 * Instances the class, creates a file for the zip, and instances the ZipOutputStream.
-	 * @param world
+	 * @param file
 	 * @throws Exception
 	 */
-	public BackupThread(World world) throws Exception {
+	public BackupThread(File world) throws Exception {
+		System.out.println("Backing up "+world.getCanonicalPath());
 		this.world = world;
-		this.file = new File("backups/worlds/" + world.getName() + "/"
+		this.file = new File(BananaBackup.backupFile + world.getName() + "/"
 				+ BananaBackup.format() + ".zip");
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
@@ -48,50 +44,34 @@ public class BackupThread extends Thread {
 		this.os = new ZipOutputStream(new DataOutputStream(
 				new FileOutputStream(file)));
 	}
-	/**
-	 * Lists all the .mcregion file for said world
-	 * @return List<File> .mcregion
-	 */
-	public List<File> getRegions() {
-		List<File> regions = new ArrayList<File>();
-		File worldFile = new File(world.getName()+"/"
-				+ (world.getEnvironment() == Environment.NETHER ? "DIM-1/region/"
-						: "region/"));
-		File[] subfiles = worldFile.listFiles();
-		if(subfiles != null)
-		for (File file : subfiles)
-			regions.add(file);
-		return regions;
-	}
+
 	/**
 	 * Just your average runnable run();
 	 */
 	public void run() {
-		List<File> files = getRegions();
-		for (int i = 0; i < files.size(); i++) {
-			File input = files.get(i);
-			try {
-				write(input);
-				if ((i % 5) == 1)
-					System.out.println("[BananaBackup] " + world.getName() + " " + ((i * 100) / files.size()) + "% backed up.");
-				if(BananaBackup.intervalBetween>0)
-					sleep(BananaBackup.intervalBetween);
-			}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
+		File file = new File(world.getName());
+		File[] subfiles = file.listFiles();
+		loop(subfiles);
 		try {
-			// Closes the ZipOutputStream, finalising the backup
 			os.close();
-			System.out.println("[BananaBackup] " + world.getName()
-					+ " 100% backed up.");
 		} catch (IOException e) {
-			// Let people know if something went wrong
-			System.err.println("[BananaBackup] Error finalising backup for "
-					+ world.getName());
+			e.printStackTrace();
 		}
 		interrupt();
+	}
+	
+	public void loop(File[] subfiles) {
+		for(File file : subfiles) {
+			if(file.isDirectory() || file.getName().endsWith("/") || file.getName().endsWith("\\")) {
+				loop(file.listFiles());
+			}
+			else try {
+				write(file);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
 	}
 	/**
 	 * A nice neat method for writing the .mcregion to our zip
@@ -100,7 +80,7 @@ public class BackupThread extends Thread {
 	 */
 	public void write(File input) throws Exception {
 		// The name of the .mcregion file
-		String name = input.getName();
+		String name = input.getPath();
 		// Creates an entry in the zip for this name
 		ZipEntry e = new ZipEntry(name);
 		os.putNextEntry(e);

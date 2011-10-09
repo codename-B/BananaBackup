@@ -1,5 +1,6 @@
 package de.bananaco.bananabackup;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,6 +40,10 @@ public class BananaBackup extends JavaPlugin {
 	 * The number of ticks per hour, this will never change
 	 */
 	final double tph = 72000;
+	
+	private boolean plugins = true;
+	public static String backupFile = "backups/";
+	
 	public static int intervalBetween = 100;
 
 	/**
@@ -90,6 +95,8 @@ public class BananaBackup extends JavaPlugin {
 		intervalBetween = c.getInt("interval-between", intervalBetween);
 		allWorlds = c.getBoolean("backup-all-worlds", true);
 		broadcast = c.getBoolean("broadcast-message", true);
+		plugins  = c.getBoolean("backup-plugins", true);
+		backupFile  = c.getString("backup-file","backups/");
 		backupWorlds = c
 				.getStringList("backup-worlds", new ArrayList<String>());
 		// This is just to make sure there is something in the config as an example
@@ -101,6 +108,8 @@ public class BananaBackup extends JavaPlugin {
 		c.setProperty("backup-interval-hours", interval);
 		c.setProperty("backup-all-worlds", allWorlds);
 		c.setProperty("broadcast-message", broadcast);
+		c.setProperty("backup-plugins", plugins);
+		c.setProperty("backup-file", backupFile);
 		// Save to write the changes to disk
 		c.save();
 	}
@@ -123,7 +132,7 @@ public class BananaBackup extends JavaPlugin {
 						world.save();
 						world.setAutoSave(false);
 						// Then backup
-						bt = backupWorld(world);
+						bt = backupWorld(world, null);
 						if(bt != null) {
 						bt.start();
 						while(bt.isAlive()) {
@@ -132,6 +141,18 @@ public class BananaBackup extends JavaPlugin {
 						world.setAutoSave(true);
 						}
 					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				// How about the plugins?
+				if(plugins)
+					try {
+						bt = backupWorld(null, new File("plugins"));
+						if(bt != null);
+						bt.start();
+						while(bt.isAlive()) {
+							
+						}
+					} catch(Exception e) {
 						e.printStackTrace();
 					}
 				// Should we let people know it's done?
@@ -146,17 +167,22 @@ public class BananaBackup extends JavaPlugin {
 	 * @param world
 	 * @throws Exception
 	 */
-	public BackupThread backupWorld(World world) throws Exception {
+	public BackupThread backupWorld(World world, File file) throws Exception {
+		if(world != null) {
 		// If allWorlds == true
 		if (allWorlds)
-			return new BackupThread(world);
+			return new BackupThread(new File(world.getName()));
 		// Or if the world is in the backup list
 		else if (!allWorlds && backupWorlds.contains(world.getName()))
-			return new BackupThread(world);
+			return new BackupThread(new File(world.getName()));
 		// Otherwise print an error message
 		else
 			System.out.println("[BananaBackup] Skipping backup for "
 					+ world.getName());
+		return null;
+		} else if(world == null && file != null) {
+			return new BackupThread(file);
+		}
 		return null;
 	}
 	/**
